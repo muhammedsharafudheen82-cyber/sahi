@@ -205,13 +205,13 @@
                         The Sunni Students’ Federation is a premier student organization in India, dedicated to nurturing moral excellence and intellectual growth among the youth.
                     </p>
                     <div class="flex gap-4">
-                        <!-- Updated Social Icons with provided PNGs and Links -->
+                        <!-- Updated Social Icons with provided PNGs and Links (YT removed) -->
                         <a href="https://www.facebook.com/share/1FNVLLXMmw/" target="_blank" class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors p-2">
                             <img src="fb.png" alt="Facebook" class="w-full h-full object-contain" onerror="this.style.display='none'; this.parentElement.innerText='FB'">
                         </a>
                         <a href="https://www.instagram.com/ssfnilamburdvn?igsh=YmpyNHo3d3Y5dmRi" target="_blank" class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors p-2">
                             <img src="insta.png" alt="Instagram" class="w-full h-full object-contain" onerror="this.style.display='none'; this.parentElement.innerText='IG'">
-                
+                        </a>
                     </div>
                 </div>
                 <div>
@@ -234,7 +234,7 @@
             </div>
             <div class="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500 uppercase tracking-widest font-bold">
                 <p>&copy; 2025 SSF Nilambur Division. All Rights Reserved.</p>
-                
+                <p>Designed with ❤️ for Literature</p>
             </div>
         </div>
     </footer>
@@ -883,26 +883,6 @@
         async function deleteUser(id) {
             await supabaseClient.from('users_auth').delete().eq('id', id);
             adminSub('users');
-        }
-
-        async function processExcel(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                showLoading(true);
-                for (let row of jsonData) {
-                    let { data: prog } = await supabaseClient.from('programs').select('id').eq('name', row.ProgramName || row.Program).single();
-                    if (!prog) {
-                        const { data: newP } = await supabaseClient.from('programs').insert({ name: row.ProgramName || row.Program, category: row.Category || 'General', stage_id: 'Stage 1', status: 'pending' }).select().single();
-                        prog = newP;
-                    }
-                    if (prog) await supabaseClient.from('participants').insert({ program_id: prog.id, participation_number: row.ParticipationNumber || row['Participation#'], name: row.Name, sector: row.Sector });
-                }
-                showLoading(false); showToast("Bulk Import Completed"); adminSub('participants');
-            };
-            reader.readAsArrayBuffer(file);
         }
 
         // --- STAGE MANAGER ---
