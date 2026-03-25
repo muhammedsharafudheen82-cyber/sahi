@@ -112,6 +112,25 @@
         @keyframes spinner {
             to { transform: rotate(360deg); }
         }
+
+        /* Poster Overlay Styles */
+        .poster-preview {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 4/5;
+            position: relative;
+            background-color: white;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        .poster-text-layer {
+            position: absolute;
+            top: 25%;
+            left: 8%;
+            width: 80%;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="text-slate-900">
@@ -261,6 +280,7 @@
         let currentUser = null;
         let evaluationMode = false;
         let adminParticipantsData = []; // Cache for searching
+        let currentPosterResult = null; // Stores results for poster display
 
         // Navigation Engine
         function navigate(view) {
@@ -481,10 +501,77 @@
             const { data: parts } = await supabaseClient.from('participants').select('*').eq('program_id', id).order('score', { ascending: false });
             showLoading(false);
             if (!prog) return;
+
+            currentPosterResult = { prog, parts: parts.slice(0, 3) }; // Only top 3 for poster focus
+            
             const content = document.getElementById('admin-modal-content');
-            content.innerHTML = `<div class="text-center mb-8"><h2 class="text-3xl font-ssf text-orange-600 mb-2">${prog.name}</h2><p class="text-xs font-black text-slate-400 uppercase tracking-widest">${prog.category} Winners</p></div>
-                <div class="space-y-4">${(parts || []).slice(0, 3).map((p, i) => `<div class="flex items-center gap-6 p-6 rounded-[2rem] bg-slate-50"><div class="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl bg-orange-600 text-white">${i + 1}</div><div><div class="font-black text-lg text-slate-900">${p.name}</div><div class="text-xs font-bold text-slate-500 uppercase">${p.sector} Sector</div></div><div class="ml-auto text-2xl font-black text-orange-600">${p.score}</div></div>`).join('')}</div>`;
+            content.innerHTML = `
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-ssf text-orange-600 mb-2">${prog.name}</h2>
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest">${prog.category} Winners</p>
+                </div>
+
+                <div class="flex flex-col items-center gap-8">
+                    <!-- Poster Container (View only) -->
+                    <div id="poster-container" class="poster-preview">
+                        <img id="poster-bg" src="poster.jpeg" class="absolute inset-0 w-full h-full object-cover">
+                        <div class="poster-text-layer">
+                            <h3 class="font-ssf text-orange-700 text-xl md:text-2xl leading-none mb-1 uppercase" id="poster-prog-name">${prog.name}</h3>
+                            <p class="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-6" id="poster-prog-cat">${prog.category}</p>
+                            
+                            <div class="space-y-4" id="poster-winners-list">
+                                ${currentPosterResult.parts.map((p, i) => `
+                                    <div class="flex items-start gap-3">
+                                        <span class="font-ssf text-orange-600 text-3xl leading-none">${i + 1}</span>
+                                        <div>
+                                            <div class="font-black text-slate-900 text-lg leading-tight uppercase">${p.name}</div>
+                                            <div class="text-[9px] font-bold text-orange-500 uppercase tracking-widest">${p.sector} SECTOR</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button onclick="switchPoster('poster.jpeg')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-xs hover:bg-slate-200">Template 1</button>
+                        <button onclick="switchPoster('poster1.jpeg')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-xs hover:bg-slate-200">Template 2</button>
+                        <button onclick="switchPoster('poster2.jpeg')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-xs hover:bg-slate-200">Template 3</button>
+                    </div>
+
+                    <button onclick="downloadResultPoster('${prog.name}')" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Download Result Poster (JPEG)
+                    </button>
+                </div>
+            `;
             openAdminModal();
+        }
+
+        function switchPoster(src) {
+            document.getElementById('poster-bg').src = src;
+        }
+
+        async function downloadResultPoster(progName) {
+            const element = document.getElementById('poster-container');
+            showLoading(true);
+            try {
+                const canvas = await html2canvas(element, {
+                    scale: 3, // High quality
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null
+                });
+                const link = document.createElement('a');
+                link.download = `${progName.replace(/\s+/g, '_')}_Result.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                showToast("Poster downloaded successfully!");
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to generate poster", "error");
+            }
+            showLoading(false);
         }
 
         // --- ADMIN LOGIN & DASHBOARD ---
