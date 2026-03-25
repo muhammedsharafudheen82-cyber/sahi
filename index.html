@@ -252,14 +252,14 @@
     </div>
 
     <script>
-        // Configuration
-        const SUPABASE_URL = 'https://ccvyjwtxbesrvptezeku.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdnlqd3R4YmVzcnZwdGV6ZWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjA4NDAsImV4cCI6MjA4OTkzNjg0MH0.gbdAgRrudNU-dhdFVW9TXXxgvZfx5Y2O_gE9X-a38tU';
+        // Updated Configuration
+        const SUPABASE_URL = 'https://cxlsqygbrkjqkqkgbvam.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4bHNxeWdicmtqcWtxa2didmFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MTg3MzksImV4cCI6MjA4OTk5NDczOX0.m9xJSkH6ppv5sPEzgWybzPpBavbLYlbqf3O7abtJLqg';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentView = 'home';
         let currentUser = null;
-        let evaluationMode = false; // Tracks if names should be hidden for scoring
+        let evaluationMode = false;
 
         // Navigation Engine
         function navigate(view) {
@@ -287,7 +287,7 @@
             const { data } = await supabaseClient.from('news').select('*').order('created_at', { ascending: false });
             const ticker = document.getElementById('news-ticker');
             if (data && data.length > 0) {
-                ticker.innerText = data.map(n => n.content).join('   •   ');
+                ticker.innerText = data.map(n => n.content).join('    •   ');
             } else {
                 ticker.innerText = "Welcome to Sahithyolsav 2025 Nilambur Division! Stay tuned for live updates and results.";
             }
@@ -321,7 +321,6 @@
 
         function renderHome() {
             return `
-                <!-- Hero Section -->
                 <section class="relative h-[600px] overflow-hidden bg-slate-950">
                     <div id="carousel-track" class="flex h-full transition-transform duration-1000 ease-in-out">
                         <div class="min-w-full h-full relative">
@@ -349,7 +348,6 @@
                         </div>
                     </div>
                 </section>
-                <!-- Welcome Section -->
                 <section class="py-24 bg-white">
                     <div class="container mx-auto px-4">
                         <div class="max-w-4xl mx-auto text-center">
@@ -494,7 +492,12 @@
             const id = document.getElementById('login-id').value;
             const pwd = document.getElementById('login-pwd').value;
             showLoading(true);
-            if ((id === 'admin' && pwd === 'nilambur123') || (id === 'sharafunbr@gmail.com' && pwd === '123456')) {
+            // Default master admin fallback
+            if (
+                (id === 'admin' && pwd === 'nilambur123') || 
+                (id === 'sharafunbr@gmail.com' && pwd === '123456') ||
+                (id === 'muhammedsharafudheen82@gmail.com' && pwd === '123456')
+            ) {
                 currentUser = { role: 'admin', login_id: id };
                 closeLoginModal(); navigate('admin'); showLoading(false); return;
             }
@@ -811,7 +814,6 @@
                         <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 flex flex-col lg:flex-row items-center gap-8 relative overflow-hidden group hover:shadow-xl transition-all">
                             
                             ${!evaluationMode ? `
-                                <!-- Attendance & Code Phase -->
                                 <div class="w-full lg:w-1/3">
                                     <div class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">REG ID: ${p.participation_number}</div>
                                     <div class="text-2xl font-black text-slate-900 mb-1">${p.name}</div>
@@ -830,7 +832,6 @@
                                     ` : '<div class="text-xs text-slate-300 font-bold uppercase italic">Awaiting Codes</div>'}
                                 </div>
                             ` : `
-                                <!-- Scoring Phase (Anonymous) -->
                                 <div class="w-24 h-24 rounded-full bg-slate-950 text-white flex items-center justify-center font-black text-4xl shadow-xl border-4 border-orange-600">
                                     ${p.chess_number}
                                 </div>
@@ -848,7 +849,6 @@
 
         async function startChessSelection(progId) {
             showLoading(true);
-            // Re-fetch latest attendance to be sure
             const { data: parts, error: fetchError } = await supabaseClient.from('participants').select('*').eq('program_id', progId).eq('attendance', true);
             
             if(fetchError || !parts || parts.length === 0) {
@@ -856,7 +856,6 @@
                 return showToast("Mark attendance before assigning codes", "error");
             }
             
-            // Generate sequence A, B, C... Z, AA, AB...
             const generateCode = (index) => {
                 let code = '';
                 while (index >= 0) {
@@ -868,7 +867,6 @@
 
             const indices = parts.map((_, i) => i).sort(() => Math.random() - 0.5);
             
-            // Sequentially update one by one for maximum reliability
             let failed = false;
             for (let i = 0; i < parts.length; i++) {
                 const { error: updateError } = await supabaseClient.from('participants').update({ chess_number: generateCode(indices[i]) }).eq('id', parts[i].id);
@@ -881,10 +879,10 @@
             showLoading(false); 
             
             if (!failed) {
-                showToast("Chess letters assigned! Reveal them with participants.");
+                showToast("Chess letters assigned!");
                 await openStageProgram(progId); 
             } else {
-                showToast("Some entries failed to sync. Please try again.", "error");
+                showToast("Some entries failed to sync.", "error");
             }
         }
 
@@ -903,12 +901,11 @@
         async function markAttendance(id, present, progId) { 
             await supabaseClient.from('participants').update({ attendance: present }).eq('id', id); 
             showToast(present ? "Marked Present" : "Marked Absent");
-            // Auto-refresh the list to ensure the code generator sees the latest attendance
             await openStageProgram(progId);
         }
 
         async function finishStageProgram(id) {
-            if(!confirm("Are you sure you want to finalize and transfer results? No further edits can be made.")) return;
+            if(!confirm("Are you sure you want to finalize and transfer results?")) return;
             showLoading(true);
             await supabaseClient.from('programs').update({ status: 'completed' }).eq('id', id);
             showLoading(false);
@@ -941,7 +938,6 @@
             showLoading(false);
             const content = document.getElementById('admin-modal-content');
             
-            // Calculate Position/Rank
             let currentRank = 1;
             const rankedParts = (parts || []).map((p, i, arr) => {
                 if (i > 0 && p.score < arr[i-1].score) currentRank = i + 1;
@@ -957,7 +953,6 @@
                         </div>
                         <div class="text-orange-600 font-black text-xl">${p.score}</div>
                     </div>`).join('')}
-                    ${parts.length === 0 ? '<p class="text-center text-slate-400 py-10">No scores found.</p>' : ''}
                 </div>`;
             openAdminModal();
         }
