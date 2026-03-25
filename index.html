@@ -493,7 +493,11 @@
             const pwd = document.getElementById('login-pwd').value;
             showLoading(true);
             // Default master admin fallback
-            if ((id === 'admin' && pwd === 'nilambur123') || (id === 'sharafunbr@gmail.com' && pwd === '123456')) {
+            if (
+                (id === 'admin' && pwd === 'nilambur123') || 
+                (id === 'sharafunbr@gmail.com' && pwd === '123456') ||
+                (id === 'muhammedsharafudheen82@gmail.com' && pwd === '123456')
+            ) {
                 currentUser = { role: 'admin', login_id: id };
                 closeLoginModal(); navigate('admin'); showLoading(false); return;
             }
